@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Dynamic Line Chart</title>
+    <script src="../../Chart.bundle.js"></script>
+<body>
+    <div style="width:75%;">
+        <canvas id="canvas"></canvas>
+    </div>
+    <script>
+        var speed = 1000
+
+        var samples = 300;
+        var values = [];
+        var labels = [];
+        var value = 0;
+
+        values.length = samples;
+        labels.length = samples;
+        values.fill(0);
+        labels.fill(0);
+
+        var config = {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: "keys",
+                    data: values,
+                    fill: false,
+
+                    backgroundColor: 'rgb(255, 99, 132)',
+                    borderColor: 'rgb(255, 99, 132)',
+                    borderWidth: 2,
+                    lineTension: 0.25,
+                    pointRadius: 0
+                }]
+            },
+            options: {
+                responsive: true,
+                title:{
+                    display:true,
+                    text:'number of keys in 5 minutes'
+                },
+                tooltips: {
+                    mode: 'index',
+                    intersect: false,
+                },
+                scales: {
+                    xAxes: [{
+                        display: false
+                    }],
+                    yAxes: [{
+                        display: true,
+                        scaleLabel: {
+                            display: true,
+                            labelString: 'number of keys'
+                        }
+                    }]
+                }
+            }
+        };
+
+        function httpGetAsync(theUrl, callback)
+        {
+            var xmlHttp = new XMLHttpRequest();
+            xmlHttp.onreadystatechange = function() { 
+                if (xmlHttp.readyState == 4 && xmlHttp.status == 200)
+                    callback(xmlHttp.responseText);
+            }
+            xmlHttp.open("GET", theUrl, true); // true for asynchronous 
+            xmlHttp.send(null);
+        }
+
+        function update(data) {
+            data = JSON.parse(data)
+            console.log(data)
+            labels.push(data.time);
+            labels.shift();
+            values.push(data.keys);
+            values.shift();
+            window.myLine.update();
+        }
+
+        window.onload = function() {
+            var ctx = document.getElementById("canvas").getContext("2d");
+            window.myLine = new Chart(ctx, config);
+            setInterval(function(){
+                httpGetAsync('http://192.168.3.220:8000', update)
+            }, speed)
+            
+        };
+    </script>
+</body>
+</html>
