@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <title>Dynamic Line Chart</title>
-    <script src="../../Chart.bundle.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.5.0/Chart.bundle.min.js"></script>
 <body>
     <div style="width:75%;">
         <canvas id="canvas"></canvas>
@@ -62,6 +62,7 @@
             }
         };
 
+        // http://stackoverflow.com/a/4033310/6088837
         function httpGetAsync(theUrl, callback)
         {
             var xmlHttp = new XMLHttpRequest();
@@ -69,13 +70,17 @@
                 if (xmlHttp.readyState == 4 && xmlHttp.status == 200)
                     callback(xmlHttp.responseText);
             }
+            xmlHttp.timeout = speed;
+            // xmlHttp.ontimeout = function (e) {
+            //     console.log("Time out!")
+            // }; 
             xmlHttp.open("GET", theUrl, true); // true for asynchronous 
             xmlHttp.send(null);
         }
 
         function update(data) {
-            data = JSON.parse(data)
             console.log(data)
+            data = JSON.parse(data)
             labels.push(data.time);
             labels.shift();
             values.push(data.keys);

@@ -13,6 +13,7 @@ class Handler(SimpleHTTPRequestHandler):
     def _set_headers(self):
         self.send_response(200)
         self.send_header('Content-type', 'text/html')
+        # No 'Access-Control-Allow-Origin' header is present on the requested resource error
         self.send_header("Access-Control-Allow-Origin", "*")
         self.end_headers()
 

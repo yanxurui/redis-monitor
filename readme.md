@@ -15,3 +15,4 @@ Monitor the number of keys in a redis instance by firing the command INFO every 
 * wsgi server
 * websocket
 * used memory
+* save snapshot
