@@ -2,13 +2,14 @@ import re
 import json
 import time
 import BaseHTTPServer
+from SimpleHTTPServer import SimpleHTTPRequestHandler
 
 import redis
 
 import conf
 
 
-class Handler(BaseHTTPServer.BaseHTTPRequestHandler):
+class Handler(SimpleHTTPRequestHandler):
     def _set_headers(self):
         self.send_response(200)
         self.send_header('Content-type', 'text/html')
@@ -16,12 +17,16 @@ class Handler(BaseHTTPServer.BaseHTTPRequestHandler):
         self.end_headers()
 
     def do_GET(self):
-        self._set_headers()
-        data = {
-            'time': time.strftime('%M:%S'),
-            'keys': self._keys()
-        }
-        self.wfile.write(json.dumps(data))
+        if self.path == '/info':
+            self._set_headers()
+            data = {
+                'time': time.strftime('%M:%S'),
+                'keys': self._keys()
+            }
+            self.wfile.write(json.dumps(data))
+        else:
+            # serves static files from the current directory and below
+            SimpleHTTPRequestHandler.do_GET(self)
 
     def _keys(self):
         r = redis.StrictRedis(host=conf.host, port=conf.port)
