@@ -1,2 +1,4 @@
-host = 'localhost'
-port = 6879
+port = 8000
+
+redis_host = 'localhost'
+redis_port = 6379

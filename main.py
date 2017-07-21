@@ -30,18 +30,19 @@ class Handler(SimpleHTTPRequestHandler):
             SimpleHTTPRequestHandler.do_GET(self)
 
     def _keys(self):
-        r = redis.StrictRedis(host=conf.host, port=conf.port)
+        r = redis.StrictRedis(host=conf.redis_host, port=conf.redis_port)
         info = r.info()
         return sum(v['keys'] for k,v in info.items() if re.match(r'db\d', k))
 
 
-def run(server_class=BaseHTTPServer.HTTPServer,
+def main(server_class=BaseHTTPServer.HTTPServer,
         handler_class=Handler):
-    PORT = 8000
+    PORT = conf.port
     server_address = ('', PORT)
     httpd = server_class(server_address, handler_class)
     print('listening at %d...' % PORT)
     httpd.serve_forever()
 
 if __name__ == '__main__':
-    run()
+    main()
+
