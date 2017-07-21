@@ -9,8 +9,6 @@
         <canvas id="canvas"></canvas>
     </div>
     <script>
-        var speed = 1000
-
         var samples = 300;
         var values = [];
         var labels = [];
@@ -62,22 +60,6 @@
             }
         };
 
-        // http://stackoverflow.com/a/4033310/6088837
-        function httpGetAsync(theUrl, callback)
-        {
-            var xmlHttp = new XMLHttpRequest();
-            xmlHttp.onreadystatechange = function() { 
-                if (xmlHttp.readyState == 4 && xmlHttp.status == 200)
-                    callback(xmlHttp.responseText);
-            }
-            xmlHttp.timeout = speed;
-            // xmlHttp.ontimeout = function (e) {
-            //     console.log("Time out!")
-            // }; 
-            xmlHttp.open("GET", theUrl, true); // true for asynchronous 
-            xmlHttp.send(null);
-        }
-
         function update(data) {
             console.log(data)
             data = JSON.parse(data)
@@ -91,10 +73,24 @@
         window.onload = function() {
             var ctx = document.getElementById("canvas").getContext("2d");
             window.myLine = new Chart(ctx, config);
-            setInterval(function(){
-                httpGetAsync('/info', update)
-            }, speed)
-            
+
+            // Open up a connection to our server
+            // https://stackoverflow.com/a/10418013/6088837
+            var ws = new WebSocket("ws://"+window.location.host+"/info");
+
+            // What do we do when we get a message?
+            ws.onmessage = function(evt) {
+                update(evt.data)
+            }
+            ws.onopen = function(evt) {
+                console.log('Connected');
+            }
+            ws.onerror = function(evt) {
+                console.log('Error');
+            }
+            ws.onclose = function(evt) {
+                console.log('Closed');
+            }
         };
     </script>
 </body>

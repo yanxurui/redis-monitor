@@ -14,11 +14,7 @@ browser http://127.0.0.1:8000
 
 config file is `conf.py`
 
-## dependeces
-* Chart.js
-* redis-py
-
 ## todo
-- [ ] websocket
+- [x] websocket
 - [ ] used memory
 - [ ] save snapshot

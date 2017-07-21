@@ -1,48 +1,57 @@
 import re
 import json
 import time
-import BaseHTTPServer
-from SimpleHTTPServer import SimpleHTTPRequestHandler
 
 import redis
+import gevent
+from geventwebsocket import WebSocketServer, WebSocketApplication, Resource
+from flask import Flask, send_from_directory
 
 import conf
 
+app = Flask(__name__)
+# Catch-All URL
+@app.route('/', defaults={'filename': ''})
+@app.route('/<path:filename>')
+def root(filename):
+    # only serve static files for now
+    if filename == '' or filename[-1] == '/':
+        filename = filename + 'index.html'
+    return send_from_directory('', filename)
 
-class Handler(SimpleHTTPRequestHandler):
-    def _set_headers(self):
-        self.send_response(200)
-        self.send_header('Content-type', 'text/html')
-        # No 'Access-Control-Allow-Origin' header is present on the requested resource error
-        self.send_header("Access-Control-Allow-Origin", "*")
-        self.end_headers()
+class WSApp(WebSocketApplication):
+    def on_open(self):
+        print("Connected!")
 
-    def do_GET(self):
-        if self.path == '/info':
-            self._set_headers()
-            data = {
+    def on_close(self, reason):
+        print("Connection closed!")
+
+    def on_message(self, message):
+        if message is None:
+            pass # closed
+
+server = WebSocketServer(('', conf.port), Resource([
+        ('/info', WSApp),
+        ('/', app)
+    ]))
+
+def keys():
+    r = redis.StrictRedis(host=conf.redis_host, port=conf.redis_port)
+    info = r.info()
+    return sum(v['keys'] for k,v in info.items() if re.match(r'db\d', k))
+
+def beat():
+    while True:
+        gevent.sleep(conf.interval)
+        if hasattr(server, 'clients') and server.clients:
+            data = json.dumps({
                 'time': time.strftime('%M:%S'),
-                'keys': self._keys()
-            }
-            self.wfile.write(json.dumps(data))
-        else:
-            # serves static files from the current directory and below
-            SimpleHTTPRequestHandler.do_GET(self)
+                'keys': keys()
+            })
+            for client in server.clients.values():
+                client.ws.send(data)
 
-    def _keys(self):
-        r = redis.StrictRedis(host=conf.redis_host, port=conf.redis_port)
-        info = r.info()
-        return sum(v['keys'] for k,v in info.items() if re.match(r'db\d', k))
+gevent.spawn(beat)
 
-
-def main(server_class=BaseHTTPServer.HTTPServer,
-        handler_class=Handler):
-    PORT = conf.port
-    server_address = ('', PORT)
-    httpd = server_class(server_address, handler_class)
-    print('listening at %d...' % PORT)
-    httpd.serve_forever()
-
-if __name__ == '__main__':
-    main()
-
+print('listening at %d...' % conf.port)
+server.serve_forever()
